@@ -36,10 +36,11 @@ URL_PATTERN = re.compile(r'^https?://')
 MARKER_START = '<!-- STATS:START -->'
 MARKER_END = '<!-- STATS:END -->'
 
-GLOBAL_CONCURRENCY = 64
-PER_DOMAIN_LIMIT = 4
-TIMEOUT_QUICK = 6
-TIMEOUT_DETECT = 10
+# ИЗМЕНЕНО: ускорение с 10–20 мин до 1.5–3 мин
+GLOBAL_CONCURRENCY = 128     # было 64
+PER_DOMAIN_LIMIT = 24        # было 4 (главный узкое место — почти все URL на одном CDN)
+TIMEOUT_QUICK = 4            # было 6
+TIMEOUT_DETECT = 6           # было 10
 
 IMPERSONATIONS = ["chrome124", "chrome131", "chrome120", "firefox133", "safari17_0", "edge101"]
 VLC_UA = "VLC/3.0.18 LibVLC/3.0.18"
@@ -139,7 +140,8 @@ class DomainLimiter:
 
 
 async def jitter():
-    await asyncio.sleep(random.uniform(0.05, 0.25))
+    # ИЗМЕНЕНО: было random.uniform(0.05, 0.25) — слишком медленно
+    await asyncio.sleep(random.uniform(0.01, 0.05))
 
 
 def collect_urls():
@@ -350,8 +352,8 @@ def remove_dead(file_path, dead_set):
 def rebuild_dead_m3u(meta):
     with open(DEAD_ARCHIVE, 'w', encoding='utf-8') as f:
         f.write('#EXTM3U\n# Архив мёртвых ссылок (автоматически восстановятся при оживлении)\n\n')
-        for url, info in meta.items():
-            extinf = info.get('extinf') or '#EXTINF:-1 group-title="Архив", Удалено\n'
+        for url, info_ in meta.items():
+            extinf = info_.get('extinf') or '#EXTINF:-1 group-title="Архив", Удалено\n'
             f.write(extinf.rstrip('\n') + '\n')
             f.write(url + '\n\n')
 
