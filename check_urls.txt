@@ -1,3 +1,5 @@
-# Одна ссылка на строку. Строки с # игнорируются.
+# Русскоязычные каналы iptv-org (все, независимо от страны)
+https://iptv-org.github.io/iptv/languages/rus.m3u
+
+# При желании — отдельные стримы:
 # https://example.com/stream1.m3u8
-# https://example.com/stream2.m3u8
