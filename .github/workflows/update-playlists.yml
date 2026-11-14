@@ -1,6 +1,5 @@
 name: Auto-update playlists
 
-# --- Триггеры ---
 on:
   push:
     branches: [ main, master ]
@@ -9,24 +8,25 @@ on:
       - '**.m3u8'
       - 'headers.json'
   schedule:
-    - cron: '0 4 * * 1'      # каждый понедельник в 04:00 UTC — полная проверка
-  workflow_dispatch:          # ручной запуск
+    - cron: '0 4 * * 1'
+  workflow_dispatch:
 
-# --- Права ---
 permissions:
-  contents: write             # нужно для git-auto-commit-action
+  contents: write
 
-# --- Защита от параллельных прогонов ---
-# Если запушить 3 коммита за минуту — выполнится только последний.
-# Экономит Actions-минуты и не перегружает CDN параллельными запросами.
 concurrency:
   group: playlist-update
   cancel-in-progress: true
 
+# Включаем ANSI-цвета в логах GitHub Actions
+env:
+  FORCE_COLOR: "1"
+  PYTHONUNBUFFERED: "1"
+
 jobs:
   update:
     runs-on: ubuntu-latest
-    timeout-minutes: 60       # страховка от зависания
+    timeout-minutes: 60
 
     steps:
       - name: Checkout repository
@@ -40,8 +40,6 @@ jobs:
       - name: Install deps
         run: pip install curl_cffi
 
-      # FULL_CHECK=true только при расписании и ручном запуске.
-      # При пуше — QUICK: проверяются только новые URL.
       - name: Run pipeline
         env:
           FULL_CHECK: ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
@@ -52,19 +50,29 @@ jobs:
         with:
           commit_message: "🤖 Auto: update playlists"
 
-      # --- Артефакты при падении: помогают разобраться, что случилось ---
-      - name: Upload debug artifacts on failure
-        if: failure()
+      - name: Upload reports
+        if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: debug-artifacts
+          name: reports-${{ github.run_id }}
           path: |
             alive.json
             headers.json
             alive_cache.json
+            dead_meta.json
+          retention-days: 30
+
+      - name: Upload debug artifacts on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: debug-${{ github.run_id }}
+          path: |
+            *.m3u
+            *.m3u8
+            *.log
           retention-days: 7
 
-      # --- Уведомление в Telegram при падении (работает, только если секреты заданы) ---
       - name: Notify Telegram on failure
         if: failure() && env.TELEGRAM_TOKEN != ''
         env:
