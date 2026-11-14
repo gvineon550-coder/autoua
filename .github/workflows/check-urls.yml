@@ -5,6 +5,8 @@ on:
     branches: [ main, master ]
     paths:
       - 'check_urls.txt'
+  schedule:
+    - cron: '17 4 * * 3'
   workflow_dispatch:
 
 permissions:
@@ -17,11 +19,15 @@ concurrency:
 env:
   FORCE_COLOR: "1"
   PYTHONUNBUFFERED: "1"
+  PLAYLIST_MAX_ITEMS: "700"   # под rus.m3u (~649 каналов)
+  CHECK_SEGMENTS: "0"         # только манифест — быстро
+  JITTER_MIN: "0.1"
+  JITTER_MAX: "0.5"
 
 jobs:
   check:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
