@@ -1,0 +1,3 @@
+# Одна ссылка на строку. Строки с # игнорируются.
+# https://example.com/stream1.m3u8
+# https://example.com/stream2.m3u8
